@@ -1,7 +1,7 @@
 # TeX Wording Checker
 
 Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.  
-## Wortersetzung
+### Wortersetzung
 - Beachtung von Groß- und Kleinschreibung (z.B. User-Data -> Userdata funktioniert auch für user-data)
 - Ersetzung findet in regulären LaTeX Umgebungen statt, ausgenommen sind
   - Mathemathische Umgebungen ($$, equation)
@@ -16,23 +16,22 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 
 - Projekt herunterladen via Git:
 
-
-    git clone "https://git.unibw.de/inf2-4/studarb/kp/huynh-1245059-0.git"
+    `git clone "https://git.unibw.de/inf2-4/studarb/kp/huynh-1245059-0.git"`
 
 ## Verwendung
-    python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
+
+`python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>`
+
 ## Kommandozeilen-Hilfe
-    python tex_checker.py --help
 
-- Ausgabe
+`python tex_checker.py --help`
 
-
-
+#### Ausgabe
     usage: TexWordingChecker.py [-h] --config CONFIG --root ROOT
     TeX Wording Checker – vereinheitlicht Schreibweisen in LaTeX-Dateien.
     
     options:
       -h, --help           show this help message and exit
       --config, -c CONFIG  Pfad zur Konfigurationsdatei (JSON).
-      --root, -r ROOT      Wurzeldatei des LaTeX Projekts (.tex). 
+      --root, -r ROOT      Wurzeldatei des LaTeX Projekts (.tex).
 
