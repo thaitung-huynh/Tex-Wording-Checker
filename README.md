@@ -27,6 +27,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 - Ausgabe
 
 
+
     usage: TexWordingChecker.py [-h] --config CONFIG --root ROOT
     TeX Wording Checker – vereinheitlicht Schreibweisen in LaTeX-Dateien.
     
