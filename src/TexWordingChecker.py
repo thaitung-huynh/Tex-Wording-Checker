@@ -3,9 +3,6 @@ import argparse
 import json
 from pathlib import Path
 
-
-
-
 def checkTexFile(dict, listFromPath, currentFilePath):
 
     def splitCommand(lineInLatex):
@@ -105,8 +102,6 @@ def readDictFromFile(pathFromDict):
         print("File not found!")
 
 def main():
-    ORIGINAL_DICT = "data.json"
-    ORIGINAL_PATH = "ausarbeitung/01-einleitung.tex"
     ORIGINAL_LIST_FROM_PATH = set()
 
     parser = argparse.ArgumentParser(
