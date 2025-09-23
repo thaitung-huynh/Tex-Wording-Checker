@@ -15,23 +15,33 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 ## Installation
 
 - Projekt herunterladen via Git:
-
-    `git clone "https://git.unibw.de/inf2-4/studarb/kp/huynh-1245059-0.git"`
+````
+  git clone "https://git.unibw.de/inf2-4/studarb/kp/huynh-1245059-0.git"
+````
 
 ## Verwendung
 
-`python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>`
+
+```python
+    python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
+```
+
 
 ## Kommandozeilen-Hilfe
 
-`python tex_checker.py --help`
+```python
+python tex_checker.py --help
+```
 
 #### Ausgabe
-    usage: TexWordingChecker.py [-h] --config CONFIG --root ROOT
+```text
+usage: TexWordingChecker.py [-h] --config CONFIG --root ROOT
     TeX Wording Checker – vereinheitlicht Schreibweisen in LaTeX-Dateien.
     
     options:
       -h, --help           show this help message and exit
       --config, -c CONFIG  Pfad zur Konfigurationsdatei (JSON).
       --root, -r ROOT      Wurzeldatei des LaTeX Projekts (.tex).
+```
+    
 
