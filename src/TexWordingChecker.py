@@ -93,7 +93,6 @@ def checkTexFile(dict, listFromPath, currentFilePath):
     with open(currentFilePath, 'w', encoding="utf-8") as f:
         f.write(newContentInLatex)
 
-
 def readDictFromFile(pathFromDict):
     try:
         with open(pathFromDict, 'r', encoding="utf-8") as f:
