@@ -29,7 +29,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 ## Kommandozeilen-Hilfe
 
 ```python
-    python tex_checker.py --help
+    python TexWordingChecker.py --help
 ```
 - Ausgabe
 ```text

@@ -5,26 +5,6 @@ from pathlib import Path
 
 def checkTexFile(dict, listFromPath, currentFilePath):
 
-    def splitCommand(lineInLatex):
-        cmd = ""
-        content = ""
-
-        i = 1
-        while i < len(lineInLatex):
-            if lineInLatex[i] == "{":
-                content += lineInLatex[i + 1]
-                i += 2
-                continue
-            if lineInLatex[i] == "}":
-                break
-
-            if content == "":
-                cmd += lineInLatex[i]
-            else:
-                content += lineInLatex[i]
-            i += 1
-        return cmd, content
-
     def replaceStr(textToReplace):
         for (k, v) in dict.items():
             if k in textToReplace:
@@ -45,49 +25,120 @@ def checkTexFile(dict, listFromPath, currentFilePath):
 
     lines = contentInLatex.splitlines()
     checkedLines = []
+    ignoredLine = False #Flag
+    leftIgnore = ""
+    pairToIgnore = {
+                 "\\begin{verbatim}": "\\end{verbatim}",
+                 "\\begin{math}": "\\end{math}",
+                 "\\begin{lstlisting}": "\\end{lstlisting}"}
+
+    pairBracket = {"{": "}", "|": "|"}
+
+    needToCheck = ["\\", "$", "%"]
 
     for line in lines:
-        if line.startswith(("\\", "%")):
-            cmd, nextPath = splitCommand(line)
-            # Check if it contains include then check new file
-            if cmd == "include":
-                nextLatexFile = Path(currentFilePath.parent, nextPath + ".tex")
-                if nextLatexFile.exists():
-                    checkTexFile(dict, listFromPath, nextLatexFile)
 
-            checkedLines.append(line)
-        else:
-            inMathExp = False
-            newLine = ""
-            mathExp = ""
-            textToFix = ""
+        posInLine = 0
+        newLine = ""
 
-            for i in range(len(line)):
-                if line[i] == "%":
-                    newLine += replaceStr(textToFix) + line[i:]
-                    textToFix = ""
-                    break
+        while posInLine < len(line):
+            currentStringCanReplace = ""
 
-                if line[i] == "$" and not inMathExp and (i == 0 or line[i - 1] != "\\"):
-                    inMathExp = True
-                    mathExp = "$"
-                    newLine += replaceStr(textToFix)
-                    textToFix = ""
+            while posInLine < len(line) and line[posInLine] not in needToCheck:
+                currentStringCanReplace += line[posInLine]
+                posInLine += 1
+
+            if not ignoredLine:
+                newLine += replaceStr(currentStringCanReplace)
+            else:
+                newLine += currentStringCanReplace # Now it can not be replaced
+
+
+            if posInLine == len(line):
+                break
+
+            if line[posInLine] == "%":
+                newLine += line[posInLine:]
+                break
+
+            if line[posInLine] == "$":
+                stringCanNotReplace = "$"
+                posInLine += 1
+                while posInLine < len(line):
+                    stringCanNotReplace += line[posInLine]
+                    if line[posInLine] == "$" and line[posInLine - 1] != "\\":
+                        break
+                    posInLine += 1
+
+                newLine += stringCanNotReplace
+                posInLine += 1
+                continue
+
+            if line[posInLine] == "\\":
+
+                # Check if backslash is for \\, \$, \%
+                if posInLine + 1 < len(line) and line[posInLine + 1] in needToCheck:
+                    newLine += line[posInLine] + line[posInLine + 1]
+                    posInLine += 2
                 else:
-                    if not inMathExp:
-                        textToFix += line[i]
-                    else:
-                        mathExp += line[i]
+                    # Get command
+                    latexCommand = ""
+                    posInLine += 1
+                    while posInLine < len(line) and line[posInLine].isalpha():
+                        latexCommand += line[posInLine]
+                        posInLine += 1
 
-                    if inMathExp and line[i] == "$" and (i > 0 and line[i - 1] != "\\"):
-                        inMathExp = False
-                        newLine += mathExp
-                        mathExp = ""
+                    if line[posInLine] not in pairBracket:
+                        newLine += "\\" + latexCommand
+                        continue
 
-            # Last check, if it doesn't contain $
-            if textToFix != "":
-                newLine += replaceStr(textToFix)
-            checkedLines.append(newLine)
+                    # Get content
+                    commandContent = ""
+                    leftBracket = line[posInLine]
+                    posInLine += 1 # go through bracket
+                    while posInLine < len(line) and (line[posInLine] != pairBracket[leftBracket] or line[posInLine - 1] == "\\"):
+                        commandContent += line[posInLine]
+                        posInLine += 1
+
+                    cmdLatex = "\\" + latexCommand + leftBracket + commandContent + pairBracket[leftBracket]
+                    newLine += cmdLatex
+                    posInLine += 1
+
+                    # Now position from posInLine at the end of command \begin{...} <-
+
+                    # Check if command for another .tex
+                    if latexCommand == "input" or latexCommand == "include":
+                        nextLatexFile = Path(currentFilePath.parent, commandContent + ".tex")
+                        if nextLatexFile.exists():
+                            checkTexFile(dict, listFromPath, nextLatexFile)
+
+
+                    if ignoredLine and cmdLatex == pairToIgnore[leftIgnore]:
+                        ignoredLine = False
+                        leftIgnore = ""
+                        continue
+
+                    # Check if command is verbatim-environment
+                    if latexCommand == "verb":
+                        continue # because cmdLatex contains all text between | |
+
+                    if cmdLatex in pairToIgnore:
+
+                        if pairToIgnore[cmdLatex] in line:
+                            stringCanNotReplace = ""
+                            while posInLine < len(line):
+                                if line[posInLine: posInLine + len(pairToIgnore[cmdLatex])] == pairToIgnore[cmdLatex]:
+                                    break
+                                stringCanNotReplace += line[posInLine]
+                                posInLine += 1
+
+                            newLine += stringCanNotReplace + pairToIgnore[cmdLatex]
+                            posInLine += len(pairToIgnore[cmdLatex])
+                        else:
+                            ignoredLine = True
+                            leftIgnore = cmdLatex
+
+        checkedLines.append(newLine)
 
     # Overwrite old content
     newContentInLatex = "\n".join(checkedLines)
@@ -102,6 +153,7 @@ def readDictFromFile(pathFromDict):
         print("File not found!")
 
 def main():
+
     ORIGINAL_LIST_FROM_PATH = set()
 
     parser = argparse.ArgumentParser(
@@ -117,6 +169,8 @@ def main():
     args = parser.parse_args()
 
     checkTexFile(readDictFromFile(args.config), ORIGINAL_LIST_FROM_PATH, args.root)
+
+
 
 if __name__ == '__main__':
     main()
