@@ -10,7 +10,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
   - Kommentare
 - Ersetzung wird in-Place durchgeführt, resultat ist die neu geschriebene Datei
 
---- 
+---    
 ## Installation
 
 - Projekt herunterladen via Git:

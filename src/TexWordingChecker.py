@@ -8,6 +8,7 @@ def checkTexFile(dict, listFromPath, currentFilePath):
     def splitCommand(lineInLatex):
         cmd = ""
         content = ""
+
         i = 1
         while i < len(lineInLatex):
             if lineInLatex[i] == "{":
