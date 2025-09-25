@@ -1,40 +1,56 @@
-#Tung Huynh - Kompetenztraining - HT25
+"""
+======================================================
+ TeX Wording Checker
+======================================================
+
+ Kompetenztraining – HT 2025
+ Autor   : Thai Tung Huynh
+ Matr.-Nr: 1245059
+ Betreuer: Herr Alexander Pascal Frank
+ Datum   : 22.09.2025
+
+======================================================
+"""
 import argparse
 import json
 from pathlib import Path
 
-def checkTexFile(dict, listFromPath, currentFilePath):
+def checkTexFile(wordDict, visitedPath, currentFilePath):
 
     def replaceStr(textToReplace):
-        for (k, v) in dict.items():
+        for (k, v) in wordDict.items():
             if k in textToReplace:
                 textToReplace = textToReplace.replace(k, v)
         return textToReplace
 
-    #Get absolute Path with Path(...).resolve()
+
+    # Get absolute path using Path(...).resolve()
     currentFilePath = Path(currentFilePath).resolve()
 
-    # Avoid loop
-    if currentFilePath in listFromPath:
+    # Avoid infinite recursion (loops)
+    if currentFilePath in visitedPath:
         return
 
-    listFromPath.add(currentFilePath)
+    visitedPath.add(currentFilePath)
 
     with open(currentFilePath, 'r', encoding="utf-8") as f:
         contentInLatex = f.read()
 
     lines = contentInLatex.splitlines()
     checkedLines = []
-    ignoredLine = False #Flag
-    leftIgnore = ""
-    pairToIgnore = {
+
+    # Flag to mark ignored environment
+    ignoredLine = False 
+    currentIgnoredCommand = ""
+    pairNeedToIgnore = {
                  "\\begin{verbatim}": "\\end{verbatim}",
                  "\\begin{math}": "\\end{math}",
                  "\\begin{lstlisting}": "\\end{lstlisting}"}
-
-    pairBracket = {"{": "}", "|": "|"}
-
+    
     needToCheck = ["\\", "$", "%"]
+    
+    pairBracket = {"{": "}", "|": "|"}
+    
 
     for line in lines:
 
@@ -51,7 +67,7 @@ def checkTexFile(dict, listFromPath, currentFilePath):
             if not ignoredLine:
                 newLine += replaceStr(currentStringCanReplace)
             else:
-                newLine += currentStringCanReplace # Now it can not be replaced
+                newLine += currentStringCanReplace # Do not replace inside ignored environment
 
 
             if posInLine == len(line):
@@ -81,7 +97,7 @@ def checkTexFile(dict, listFromPath, currentFilePath):
                     newLine += line[posInLine] + line[posInLine + 1]
                     posInLine += 2
                 else:
-                    # Get command
+                    # Parse LaTeX command name
                     latexCommand = ""
                     posInLine += 1
                     while posInLine < len(line) and line[posInLine].isalpha():
@@ -92,7 +108,7 @@ def checkTexFile(dict, listFromPath, currentFilePath):
                         newLine += "\\" + latexCommand
                         continue
 
-                    # Get content
+                    # Extract content inside brackets
                     commandContent = ""
                     leftBracket = line[posInLine]
                     posInLine += 1 # go through bracket
@@ -104,50 +120,48 @@ def checkTexFile(dict, listFromPath, currentFilePath):
                     newLine += cmdLatex
                     posInLine += 1
 
-                    # Now position from posInLine at the end of command \begin{...} <-
 
-                    # Check if command for another .tex
+                    # Check if command refers to another .tex file
                     if latexCommand == "input" or latexCommand == "include":
                         nextLatexFile = Path(currentFilePath.parent, commandContent + ".tex")
                         if nextLatexFile.exists():
-                            checkTexFile(dict, listFromPath, nextLatexFile)
+                            checkTexFile(wordDict, visitedPath, nextLatexFile)
 
 
-                    if ignoredLine and cmdLatex == pairToIgnore[leftIgnore]:
+                    if ignoredLine and cmdLatex == pairNeedToIgnore[currentIgnoredCommand]:
                         ignoredLine = False
-                        leftIgnore = ""
+                        currentIgnoredCommand = ""
                         continue
 
-                    # Check if command is verbatim-environment
-                    if latexCommand == "verb":
-                        continue # because cmdLatex contains all text between | |
+                    # Verbatim environment can be skipped, since cmdLatex already contains the entire text between | |
 
-                    if cmdLatex in pairToIgnore:
+                    # Check cmdLatex
+                    if cmdLatex in pairNeedToIgnore:
 
-                        if pairToIgnore[cmdLatex] in line:
+                        if pairNeedToIgnore[cmdLatex] in line:
                             stringCanNotReplace = ""
                             while posInLine < len(line):
-                                if line[posInLine: posInLine + len(pairToIgnore[cmdLatex])] == pairToIgnore[cmdLatex]:
+                                if line[posInLine: posInLine + len(pairNeedToIgnore[cmdLatex])] == pairNeedToIgnore[cmdLatex]:
                                     break
                                 stringCanNotReplace += line[posInLine]
                                 posInLine += 1
 
-                            newLine += stringCanNotReplace + pairToIgnore[cmdLatex]
-                            posInLine += len(pairToIgnore[cmdLatex])
+                            newLine += stringCanNotReplace + pairNeedToIgnore[cmdLatex]
+                            posInLine += len(pairNeedToIgnore[cmdLatex])
                         else:
                             ignoredLine = True
-                            leftIgnore = cmdLatex
+                            currentIgnoredCommand = cmdLatex
 
         checkedLines.append(newLine)
 
-    # Overwrite old content
+    # Overwrite the original file with modified content
     newContentInLatex = "\n".join(checkedLines)
     with open(currentFilePath, 'w', encoding="utf-8") as f:
         f.write(newContentInLatex)
 
-def readDictFromFile(pathFromDict):
+def readwordDictFromFile(pathFromwordDict):
     try:
-        with open(pathFromDict, 'r', encoding="utf-8") as f:
+        with open(pathFromwordDict, 'r', encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         print("File not found!")
@@ -168,7 +182,7 @@ def main():
 
     args = parser.parse_args()
 
-    checkTexFile(readDictFromFile(args.config), ORIGINAL_LIST_FROM_PATH, args.root)
+    checkTexFile(readwordDictFromFile(args.config), ORIGINAL_LIST_FROM_PATH, args.root)
 
 
 
