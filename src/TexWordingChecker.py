@@ -34,12 +34,13 @@ def replace_string_in_tex(word_dict: dict, text_to_replace: str) -> str:
 
         Parameters
         ----------
-        word_dict      : dict
-        text_to_replace: str
+        word_dict      : Dictionary for word corrections (passed to recursive file processing)
+        text_to_replace: The LaTeX text where replacements should be applied.
     """
     for (k, v) in word_dict.items():
         if k in text_to_replace:
             text_to_replace = text_to_replace.replace(k, v)
+
     return text_to_replace
 
 def process_inline_math(line: str, pos_in_line: int) -> tuple[str, int]:
@@ -58,11 +59,13 @@ def process_inline_math(line: str, pos_in_line: int) -> tuple[str, int]:
     """
     result = "$"
     pos_in_line += 1
+
     while pos_in_line < len(line):
         result += line[pos_in_line]
         if line[pos_in_line] == "$" and line[pos_in_line - 1] != "\\":
             break
         pos_in_line += 1
+
     return result, pos_in_line + 1
 
 
@@ -80,7 +83,6 @@ def process_lstinline(line: str, pos_in_line: int) -> tuple[str, int]:
         line       : The LaTeX source line containing the \\lstinline command
         pos_in_line: Current position in the line (should be right after the backslash of \\lstinline)
     """
-
     if pos_in_line >= len(line):
         return "\\lstinline", pos_in_line
 
@@ -120,6 +122,7 @@ def process_latex_command(line: str, pos_in_line: int, current_path: Path,
         ignored_line       : Current state indicating whether we're in an ignored section
         current_ignored_cmd: Name of the current LaTeX command/environment being ignored
     """
+    # Initialization
     latex_command = ""
     pos_in_line += 1
 
@@ -192,25 +195,30 @@ def process_line(line: str, word_dict: dict, ignored_line: bool, current_ignored
         current_path       : Path to the current file being processed
         visited_path       : Set of already visited file paths to prevent circular processing
     """
-    # Initialization
+    # Initialize result and character position
     new_line = ""
     pos_in_line = 0
 
     while pos_in_line < len(line):
         current_replace_string = ""
+
+        # Collect consecutive characters that are safe for replacement
+        # (not LaTeX control characters like \, $, % unless escaped)
         while pos_in_line < len(line) and (line[pos_in_line] not in need_to_check_again or (pos_in_line != 0 and line[pos_in_line - 1] == "\\")):
             current_replace_string += line[pos_in_line]
             pos_in_line += 1
 
-
+        # Apply word replacement if not inside an ignored environment
         if not ignored_line:
             new_line += replace_string_in_tex(word_dict, current_replace_string)
         else:
             new_line += current_replace_string
 
+        # End of line reached → break
         if pos_in_line >= len(line):
             break
 
+        # Handle LaTeX-specific cases
         if line[pos_in_line] == "%":
             new_line += line[pos_in_line:]
             break
@@ -224,6 +232,7 @@ def process_line(line: str, word_dict: dict, ignored_line: bool, current_ignored
                                                                                         word_dict, ignored_line, current_ignored_cmd)
             new_line += cmd
 
+    # Return processed line and updated state flags
     return new_line, ignored_line, current_ignored_cmd
 
 
@@ -242,9 +251,14 @@ def check_tex_file(word_dict: dict, visited_path: set[Path], current_path: Path)
         visited_path: Set of already visited file paths to prevent circular processing
         current_path: Path to the current file being processed
     """
+
+    # Resolve to absolute path to avoid duplicates with relative vs absolute paths
     current_path = Path(current_path).resolve()
+
+    # Skip processing if file was already visited (prevents circular includes)
     if current_path in visited_path:
         return
+
     visited_path.add(current_path)
 
     try:
@@ -255,28 +269,30 @@ def check_tex_file(word_dict: dict, visited_path: set[Path], current_path: Path)
         return
 
     checked_lines = []
-    ignored_line = False
-    current_ignored_cmd = ""
+    ignored_line = False     # Track if we are inside an ignored environment (e.g., verbatim)
+    current_ignored_cmd = "" # Remember which environment is currently ignored
 
     for line in lines:
         new_line, ignored_line, current_ignored_cmd = process_line(line, word_dict, ignored_line, current_ignored_cmd,
                                                                    current_path, visited_path)
         checked_lines.append(new_line)
 
+    # Write processed lines back to the same file (in-place modification)
     with open(current_path, "w", encoding="utf-8") as f:
         f.write("\n".join(checked_lines))
 
-    # Notification for user
+    # Notify user which file was processed
     print(f"> Processed  : {current_path}")
 
 
 
 def read_dict(dict_path: Path) -> dict:
     """
-        Read dictionary from JSON file.
+        Read a word replacement dictionary from a JSON configuration file.
+
         Parameters
         ----------
-        dict_path: str
+        dict_path: Path to the JSON file containing the dictionary
     """
     try:
         with open(dict_path, 'r', encoding="utf-8") as f:
@@ -316,7 +332,6 @@ def main():
     # End-Command Config
 
     word_dict = read_dict(args.config)
-
     root_path = args.root
 
     # CLI-UI
@@ -329,7 +344,6 @@ def main():
 
     check_tex_file(word_dict, set(), root_path)
     print("Processing completed.")
-
 
 if __name__ == '__main__':
     main()
