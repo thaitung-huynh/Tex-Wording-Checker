@@ -22,7 +22,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 
 - **Ausführung mit:** 
     ```bash
-    python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
+    python TexWordingChecker.py -c <PATH_CONFIG_FILE> -r <PATH_TEX_FILE>
     ```
 
 ### Beispiel
