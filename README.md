@@ -13,20 +13,20 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
 ---    
 ## Installation
 
-- Projekt herunterladen via Git:
+- **Projekt herunterladen via Git:**
     ```bash
     git clone "https://git.unibw.de/inf2-4/studarb/kp/huynh-1245059-0.git"
     ```
 
 ## Verwendung
 
-- Ausführung mit: 
+- **Ausführung mit:** 
     ```bash
     python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
     ```
 
 ### Beispiel
-- Config-JSON: 
+- **Config-JSON:** 
     ```json
     {
       "cyber_security": "Cyber Security",
@@ -34,7 +34,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
       "cyb": "Cyber Security"
     }
     ```
-- Sample-Tex:
+- **Sample-Tex:**
     ```latex
     \documentclass{article}
     \begin{document}
@@ -59,13 +59,13 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
     \end{document}
     ```
 
-## Kommandozeilen-Hilfe
+### Kommandozeilen-Hilfe
 
-- Ausführung mit: 
+- **Ausführung mit:** 
     ```bash
     python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
     ```
-- Ausgabe
+- **Ausgabe:**
     ```text
     usage: TexWordingChecker.py [-h] --config CONFIG --root ROOT
     TeX Wording Checker – vereinheitlicht Schreibweisen in LaTeX-Dateien.
@@ -76,6 +76,6 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
       --root, -r ROOT      Wurzeldatei des LaTeX Projekts (.tex).
     ```
 ## Autor
-  - Thai Tung Huynh - INF24 
-  - Matrikelnummer: 1245059
-  - Betreuer: Herr Alexander Pascal Frank
+  - **Thai Tung Huynh - INF24** 
+  - **Matrikelnummer: 1245059**
+  - **Betreuer: Herr Alexander Pascal Frank**
