@@ -20,7 +20,7 @@ pair_need_to_ignore = { "\\begin{verbatim}": "\\end{verbatim}",
                         "\\begin{equation}": "\\end{equation}",
                         }
 need_to_check_again = ["\\", "$", "%"]
-pairs = {"{": "}", "(": ")", "[": "]"}
+pairs = {"{": "}", "(": ")", "[": "]", "|": "|"}
 # End-Initialization
 
 def replace_string_in_tex(word_dict: dict, text_to_replace: str) -> str:
@@ -80,8 +80,6 @@ def process_lstinline(line: str, pos_in_line: int) -> tuple[str, int]:
         line       : The LaTeX source line containing the \\lstinline command
         pos_in_line: Current position in the line (should be right after the backslash of \\lstinline)
     """
-    # Skip \lstinline
-    pos_in_line += 9  # len("lstinline") = 9
 
     if pos_in_line >= len(line):
         return "\\lstinline", pos_in_line
@@ -148,7 +146,6 @@ def process_latex_command(line: str, pos_in_line: int, current_path: Path,
     while pos_in_line < len(line) and bracket_count > 0:
         char = line[pos_in_line]
         content += char
-
         if char == left_bracket:
             bracket_count += 1
         elif char == pairs[left_bracket]:
@@ -201,8 +198,7 @@ def process_line(line: str, word_dict: dict, ignored_line: bool, current_ignored
 
     while pos_in_line < len(line):
         current_replace_string = ""
-        while pos_in_line < len(line and
-              (line[pos_in_line] not in need_to_check_again or (pos_in_line != 0 and line[pos_in_line - 1] == "\\"))):
+        while pos_in_line < len(line) and (line[pos_in_line] not in need_to_check_again or (pos_in_line != 0 and line[pos_in_line - 1] == "\\")):
             current_replace_string += line[pos_in_line]
             pos_in_line += 1
 

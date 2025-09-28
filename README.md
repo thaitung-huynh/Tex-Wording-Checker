@@ -26,7 +26,11 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
     ```
 
 ### Beispiel
-- **Config-JSON:** 
+- **Ausführung:**
+    ```bash
+    python TexWordingChecker.py -c config.json -r sample.tex
+    ```
+- **Config-Datei (config.json):** 
     ```json
     {
       "cyber_security": "Cyber Security",
@@ -34,7 +38,7 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
       "cyb": "Cyber Security"
     }
     ```
-- **Sample-Tex:**
+- **Sample-Tex (sample.tex):**
     ```latex
     \documentclass{article}
     \begin{document}
@@ -58,12 +62,36 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
     
     \end{document}
     ```
+- **Ergebnis (sample.tex):**
+    ```latex
+    \documentclass{article}
+    \begin{document}
+    
+    This paper is about Cyber Security in modern society.
+    Some people also write Cyber Security or even Cyber Security,
+    but they all mean the same thing.
+    
+    We define that \textbf{cybersecurity} is a key concept in technology.
+    However, mistakes like \emph{cyb} or Cyber Security are common.
+    
+    \begin{verbatim}
+    Inside verbatim environment, words like cyber_security or cyb
+    should not be changed.
+    \end{verbatim}
+    
+    Mathematical expression should stay the same: $a + b = c$ and
+    $\cyb + \cybersecurity = \text{secure}$.
+    
+    \lstinline|cyber_security| should also remain unchanged.
+    
+    \end{document}
+    ```
 
 ### Kommandozeilen-Hilfe
 
 - **Ausführung mit:** 
     ```bash
-    python TexWordingChecker.py --config <CONFIG_DATEI> --root <HAUPT_DATEI>
+    python TexWordingChecker.py --c <CONFIG_DATEI> --r <HAUPT_DATEI>
     ```
 - **Ausgabe:**
     ```text
@@ -76,6 +104,5 @@ Ein kleines Tool zur Vereinheitlichung von Schreibweisen in LaTeX-Datei.
       --root, -r ROOT      Wurzeldatei des LaTeX Projekts (.tex).
     ```
 ## Autor
-  - **Thai Tung Huynh - INF24** 
-  - **Matrikelnummer: 1245059**
-  - **Betreuer: Herr Alexander Pascal Frank**
+- **Thai Tung Huynh - INF24 - Matrikelnummer: 1245059**
+- **Betreuer: Herr Alexander Pascal Frank**
