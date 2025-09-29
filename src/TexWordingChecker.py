@@ -14,13 +14,17 @@ import argparse
 import json
 
 # Initialization
-pair_need_to_ignore = { "\\begin{verbatim}": "\\end{verbatim}",
-                        "\\begin{math}": "\\end{math}",
-                        "\\begin{lstlisting}": "\\end{lstlisting}",
-                        "\\begin{equation}": "\\end{equation}",
-                        }
+pair_need_to_ignore = {
+    "\\begin{verbatim}": "\\end{verbatim}",
+    "\\begin{math}": "\\end{math}",
+    "\\begin{lstlisting}": "\\end{lstlisting}",
+    "\\begin{equation}": "\\end{equation}"
+}
+pairs = {
+    "{": "}", "(": ")",
+    "[": "]", "|": "|"
+}
 need_to_check_again = ["\\", "$", "%"]
-pairs = {"{": "}", "(": ")", "[": "]", "|": "|"}
 # End-Initialization
 
 def replace_string_in_tex(word_dict: dict, text_to_replace: str) -> str:
@@ -36,6 +40,10 @@ def replace_string_in_tex(word_dict: dict, text_to_replace: str) -> str:
         ----------
         word_dict      : Dictionary for word corrections (passed to recursive file processing)
         text_to_replace: The LaTeX text where replacements should be applied.
+
+        Returns
+        -------
+        str            : The LaTeX text after applying all dictionary-based replacements.
     """
     for (k, v) in word_dict.items():
         if k in text_to_replace:
@@ -56,6 +64,13 @@ def process_inline_math(line: str, pos_in_line: int) -> tuple[str, int]:
         ----------
         line       : The LaTeX source line containing the inline math expression
         pos_in_line: Current position in the line (should be at the opening $ character)
+
+        Returns
+        -------
+        tuple[str, int]:
+                     A tuple containing:
+                     - The full extracted math expression (including $ delimiters).
+                     - The updated cursor position after processing the math expression.
     """
     result = "$"
     pos_in_line += 1
@@ -82,6 +97,13 @@ def process_lstinline(line: str, pos_in_line: int) -> tuple[str, int]:
         ----------
         line       : The LaTeX source line containing the \\lstinline command
         pos_in_line: Current position in the line (should be right after the backslash of \\lstinline)
+
+        Returns
+        -------
+        tuple[str, int]:
+                     A tuple containing:
+                     - The full extracted \\lstinline command (including delimiters and content).
+                     - The updated cursor position after processing the command.
     """
     if pos_in_line >= len(line):
         return "\\lstinline", pos_in_line
@@ -121,6 +143,15 @@ def process_latex_command(line: str, pos_in_line: int, current_path: Path,
         word_dict          : Dictionary for word corrections (passed to recursive file processing)
         ignored_line       : Current state indicating whether we're in an ignored section
         current_ignored_cmd: Name of the current LaTeX command/environment being ignored
+
+        Returns
+        -------
+        tuple[str, int, bool, str]:
+                             A tuple containing:
+                             - The extracted LaTeX command string.
+                             - The updated cursor position after processing the command.
+                             - A flag indicating whether the current line is inside an ignored environment.
+                             - The name of the currently ignored command/environment (if any).
     """
     # Initialization
     latex_command = ""
@@ -158,10 +189,13 @@ def process_latex_command(line: str, pos_in_line: int, current_path: Path,
 
     # Handle include/input
     if latex_command in {"input", "include"}:
-        next_file = Path(current_path.parent, content[1:-1] + ".tex")
+        new_path = content[1:-1] # Split just path from another .tex
+        if ".tex" not in new_path:
+            new_path += ".tex"
+        # Get absolute path
+        next_file = Path(current_path.parent, new_path)
         if next_file.exists():
             check_tex_file(word_dict, visited_path, next_file)
-
 
     # Handle ignored environments
     cmd_full = "\\" + latex_command + content
@@ -194,6 +228,14 @@ def process_line(line: str, word_dict: dict, ignored_line: bool, current_ignored
         current_ignored_cmd: Name of the current LaTeX command/environment being ignored
         current_path       : Path to the current file being processed
         visited_path       : Set of already visited file paths to prevent circular processing
+
+        Returns
+        -------
+        tuple[str, bool, str]:
+                             A tuple containing:
+                             - The processed line with replacements applied where appropriate.
+                             - A flag indicating whether the current line remains inside an ignored environment.
+                             - The name of the currently ignored command/environment (if any).
     """
     # Initialize result and character position
     new_line = ""
@@ -222,17 +264,14 @@ def process_line(line: str, word_dict: dict, ignored_line: bool, current_ignored
         if line[pos_in_line] == "%":
             new_line += line[pos_in_line:]
             break
-
         elif line[pos_in_line] == "$":
             math_content, pos_in_line = process_inline_math(line, pos_in_line)
             new_line += math_content
-
         elif line[pos_in_line] == "\\":
             cmd, pos_in_line, ignored_line, current_ignored_cmd = process_latex_command(line, pos_in_line, current_path, visited_path,
                                                                                         word_dict, ignored_line, current_ignored_cmd)
             new_line += cmd
 
-    # Return processed line and updated state flags
     return new_line, ignored_line, current_ignored_cmd
 
 
@@ -250,6 +289,10 @@ def check_tex_file(word_dict: dict, visited_path: set[Path], current_path: Path)
         word_dict   : Dictionary containing word corrections (key: incorrect word, value: correct word)
         visited_path: Set of already visited file paths to prevent circular processing
         current_path: Path to the current file being processed
+
+        Returns
+        -------
+        None        : The function does not return a value. It modifies the file content in-place.
     """
 
     # Resolve to absolute path to avoid duplicates with relative vs absolute paths
@@ -281,24 +324,36 @@ def check_tex_file(word_dict: dict, visited_path: set[Path], current_path: Path)
     with open(current_path, "w", encoding="utf-8") as f:
         f.write("\n".join(checked_lines))
 
+
     # Notify user which file was processed
     print(f"> Processed  : {current_path}")
 
 
 
-def read_dict(dict_path: Path) -> dict:
+def read_dict(dict_path: Path) -> dict | None:
     """
         Read a word replacement dictionary from a JSON configuration file.
 
         Parameters
         ----------
         dict_path: Path to the JSON file containing the dictionary
+
+        Returns
+        -------
+        dict     : A dictionary of word corrections loaded from the JSON file.
+        None     : If the file is not found or the content is invalid.
     """
     try:
         with open(dict_path, 'r', encoding="utf-8") as f:
-            return json.load(f)
+            ret = json.load(f)
+        if isinstance(ret, dict):
+            return ret
+        else:
+            raise TypeError
     except FileNotFoundError:
         print(f"Configuration file not found: {dict_path}")
+    except TypeError:
+        print(f"Invalid configuration file: {dict_path}")
 
 
 def main():
@@ -312,11 +367,16 @@ def main():
 
         Command-line Arguments
         ----------------------
-        --config, -c : str
+        --config, -c: str
             Path to the configuration file (.JSON) containing the word dictionary
             for corrections and standardizations
-        --root, -r   : str
+        --root, -r  : str
             Path to the root LaTeX file (.tex) of the project to be processed
+
+        Returns
+        -------
+        None        : The function does not return a value. It executes the processing pipeline
+                      and prints progress/output to the console.
     """
     # Command Config
     parser = argparse.ArgumentParser(
@@ -347,4 +407,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-# EOF - Tung - INF24
+# EOF - Tung Huynh - INF24
